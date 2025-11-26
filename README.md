@@ -11,6 +11,48 @@ A secure, interactive Python tool for working with BIP39 mnemonic seed phrases. 
 - 📦 **Self-Contained**: No external wordlist files needed
 - 🔒 **Secure**: Base58 encoding with 50-character encrypted output
 
+
+## Security Features
+
+### Why Encrypted Base58 is Better Than Plain Text
+
+Writing your 24-word seed phrase on paper has significant risks:
+
+- **Physical theft**: Anyone who finds your paper has complete access to your funds
+- **Accidental discovery**: Family members, roommates, or visitors could stumble upon it
+- **No deniability**: The words are immediately recognizable as a crypto seed phrase
+- **Easy to photograph**: Someone can quickly snap a photo without your knowledge
+- **Difficult to split**: Splitting 24 words safely requires complex schemes
+
+**Encrypted Base58 advantages:**
+
+- ✅ **Useless without passphrase**: The 50-character string is worthless to anyone who doesn't know your passphrase
+- ✅ **Plausible deniability**: Looks like random characters, not obviously a crypto wallet
+- ✅ **Compact**: 50 characters vs 200+ characters for 24 words
+- ✅ **Tamper detection**: HMAC ensures any modification is immediately detected
+- ✅ **Memory-based security**: Your passphrase can be memorized or stored separately
+- ✅ **Easy to split**: You can store the Base58 string in one location and passphrase in another
+
+**Best practice**: Write down the Base58 string and store your passphrase separately (or memorize it). An attacker needs BOTH to access your funds.
+
+### Encryption
+
+- **XOR cipher** with SHA-256 hashed passphrase
+- **HMAC authentication** (4-byte digest) to detect tampering
+- **Base58 encoding** for easy transcription
+- Fixed 50-character output format
+
+### Best Practices
+
+- ⚠️ **Go offline before running** - Disconnect WiFi and Bluetooth, or enable airplane mode BEFORE launching the script
+- ⚠️ **Never share your passphrase** - it's required to decrypt your mnemonic
+- ⚠️ **Store the Base58 string securely** - it contains your encrypted seed
+- ⚠️ **Use strong passphrases** - longer is better (20+ characters recommended)
+- ⚠️ **Verify checksums** - always ensure you see "✅ BIP39 CHECKSUM OK"
+- ⚠️ **Use dice mode for maximum security** - physical randomness is provably random
+
+
+
 ## Installation
 
 ### Requirements
@@ -93,46 +135,6 @@ The tool will:
 - Prompt for the passphrase
 - Decrypt and display the mnemonic
 - Validate the BIP39 checksum
-
-## Security Features
-
-### Why Encrypted Base58 is Better Than Plain Text
-
-Writing your 24-word seed phrase on paper has significant risks:
-
-- **Physical theft**: Anyone who finds your paper has complete access to your funds
-- **Accidental discovery**: Family members, roommates, or visitors could stumble upon it
-- **No deniability**: The words are immediately recognizable as a crypto seed phrase
-- **Easy to photograph**: Someone can quickly snap a photo without your knowledge
-- **Difficult to split**: Splitting 24 words safely requires complex schemes
-
-**Encrypted Base58 advantages:**
-
-- ✅ **Useless without passphrase**: The 50-character string is worthless to anyone who doesn't know your passphrase
-- ✅ **Plausible deniability**: Looks like random characters, not obviously a crypto wallet
-- ✅ **Compact**: 50 characters vs 200+ characters for 24 words
-- ✅ **Tamper detection**: HMAC ensures any modification is immediately detected
-- ✅ **Memory-based security**: Your passphrase can be memorized or stored separately
-- ✅ **Easy to split**: You can store the Base58 string in one location and passphrase in another
-
-**Best practice**: Write down the Base58 string and store your passphrase separately (or memorize it). An attacker needs BOTH to access your funds.
-
-### Encryption
-
-- **XOR cipher** with SHA-256 hashed passphrase
-- **HMAC authentication** (4-byte digest) to detect tampering
-- **Base58 encoding** for easy transcription
-- Fixed 50-character output format
-
-### Best Practices
-
-- ⚠️ **Go offline before running** - Disconnect WiFi and Bluetooth, or enable airplane mode BEFORE launching the script
-- ⚠️ **Never share your passphrase** - it's required to decrypt your mnemonic
-- ⚠️ **Store the Base58 string securely** - it contains your encrypted seed
-- ⚠️ **Use strong passphrases** - longer is better (20+ characters recommended)
-- ⚠️ **Verify checksums** - always ensure you see "✅ BIP39 CHECKSUM OK"
-- ⚠️ **Use dice mode for maximum security** - physical randomness is provably random
-
 ## Examples
 
 ### Generate from Dice
