@@ -59,7 +59,7 @@ After entering all 24 words, the tool will:
 
 ### 2. Dice Mode
 
-Generate a mnemonic from physical dice rolls (minimum 98 rolls for 256-bit entropy):
+Generate a mnemonic from physical dice rolls (minimum 98 rolls for 256-bit entropy) for example:
 
 ```bash
 python bip39coder.py 31635523441252211266355144251526162152534441525162653534243415251626155344412551216265355251261626513
