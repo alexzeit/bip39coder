@@ -34,7 +34,7 @@ pip install base58
 ```
 
 ## Usage
-
+⚠️ SECURITY REMINDER: For maximum security, disconnect from WiFi and Bluetooth (or enable airplane mode) BEFORE running this script.
 ### 1. Interactive Mode
 
 Enter a 24-word BIP39 mnemonic phrase interactively with live suggestions:
