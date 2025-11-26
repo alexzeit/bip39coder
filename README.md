@@ -16,12 +16,11 @@ Python 3.6+
 base58 library
 
 Setup
-bash# Clone the repository
-git clone https://github.com/yourusername/bip39coder.git
+Clone the repository:
+bashgit clone https://github.com/yourusername/bip39coder.git
 cd bip39coder
-
-# Install dependencies
-pip install base58
+Install dependencies:
+bashpip install base58
 Usage
 1. Interactive Mode
 Enter a 24-word BIP39 mnemonic phrase interactively with live suggestions:
@@ -83,7 +82,8 @@ Best Practices
 
 Examples
 Generate from Dice
-bash$ python bip39coder.py 123456123456123456123456123456123456123456123456123456123456123456123456123456123456123456123456123456
+bashpython bip39coder.py 123456123456123456123456123456123456123456123456123456123456123456123456123456123456123456123456123456
+Output:
 === LIVE BIP39 INTERACTIVE ENTRY ===
 Suggestions appear after first letter
 
@@ -94,7 +94,8 @@ Enter passphrase to encrypt mnemonic: ********
 Encrypted Base58 string (50 chars):
 11111AWJqK8ZcHvPmVLkVzVp3CzGH5RmPHwUvXoSSWdUQe
 Decrypt Stored Mnemonic
-bash$ python bip39coder.py 11111AWJqK8ZcHvPmVLkVzVp3CzGH5RmPHwUvXoSSWdUQe
+bashpython bip39coder.py 11111AWJqK8ZcHvPmVLkVzVp3CzGH5RmPHwUvXoSSWdUQe
+Output:
 === LIVE BIP39 INTERACTIVE ENTRY ===
 Suggestions appear after first letter
 
