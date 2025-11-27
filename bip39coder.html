@@ -1,0 +1,1026 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>BIP39 Offline Coder</title>
+<script src="qrcode.min.js"></script>
+<script src="html2canvas.min.js"></script>
+<style>
+body{font-family:Arial;max-width:900px;margin:20px auto;padding:0 20px}
+h2{border-bottom:2px solid #333;padding-bottom:10px}
+h3{color:#444;margin-top:30px}
+.section{border:1px solid #ddd;padding:20px;margin:20px 0;border-radius:5px;background:#fafafa}
+textarea,input[type="text"],input[type="password"]{width:100%;font-family:monospace;padding:8px;box-sizing:border-box;border:1px solid #ccc;border-radius:3px}
+input[type="text"].word-input{width:150px;margin:5px;display:inline-block}
+button{padding:10px 20px;margin:5px 0;background:#007bff;color:white;border:none;border-radius:3px;cursor:pointer;font-size:14px}
+button:hover{background:#0056b3}
+.output{background:#f0f0f0;padding:15px;margin:10px 0;border-radius:3px;word-break:break-all;font-family:monospace}
+.success{color:#28a745;font-weight:bold}
+.error{color:#dc3545;font-weight:bold}
+.suggestions{position:absolute;background:white;border:1px solid #ccc;max-height:200px;overflow-y:auto;z-index:1000;box-shadow:0 2px 5px rgba(0,0,0,0.2)}
+.suggestion-item{padding:8px;cursor:pointer}
+.suggestion-item:hover{background:#007bff;color:white}
+.word-container{position:relative;display:inline-block}
+label{display:block;margin:10px 0 5px 0;font-weight:bold}
+.output-with-qr{display:flex;align-items:flex-start;gap:10px;margin-top:10px}
+.qr-icon-container{position:relative;display:inline-block;flex-shrink:0}
+.qr-icon{width:32px;height:32px;cursor:pointer;display:none;background:#007bff;border-radius:4px;padding:4px}
+.qr-icon:hover{background:#0056b3}
+.qr-icon svg{width:100%;height:100%;fill:white}
+.qr-popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);background:white;border:2px solid #333;padding:20px;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.5);z-index:2000}
+.qr-icon-container:hover .qr-popup{display:block}
+#encodeOutput,#diceOutput,#decodeOutput{flex:1}
+.license-card{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:white;padding:30px 40px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.5);z-index:3000;width:550px;font-family:'Courier New', monospace}
+.license-card h2{margin:0 0 25px 0;font-size:22px;border-bottom:2px solid rgba(255,255,255,0.3);padding-bottom:12px;text-align:center}
+.license-actions{position:absolute;top:-50px;right:0;display:flex;gap:10px}
+.license-action-btn{background:rgba(255,255,255,0.2);border:none;color:white;font-size:20px;width:35px;height:35px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.license-action-btn:hover{background:rgba(255,255,255,0.3);transform:translateY(-2px)}
+.license-close{background:rgba(255,255,255,0.2);border:none;color:white;font-size:24px;width:35px;height:35px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.license-close:hover{background:rgba(255,255,255,0.3);transform:rotate(90deg)}
+.license-content-display{display:flex;gap:20px;align-items:flex-start}
+.license-text-display{flex:1}
+.license-qr-display{width:150px;height:150px;background:white;padding:10px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.license-qr-display canvas{max-width:100%;max-height:100%}
+.license-info{margin:15px 0}
+.license-info label{display:block;font-size:11px;opacity:0.8;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px}
+.license-info .value{font-size:16px;font-weight:bold;background:rgba(0,0,0,0.2);padding:8px;border-radius:5px;word-break:break-all;line-height:1.4}
+.license-footer{margin-top:20px;padding-top:15px;border-top:1px solid rgba(255,255,255,0.2);font-size:10px;opacity:0.7;text-align:center}
+.license-backdrop{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000000;z-index:2999}
+.show-license-btn{background:#28a745;margin-left:10px}
+.show-license-btn:hover{background:#218838}
+</style>
+</head>
+<body>
+
+<h2>BIP-39 Offline Coder (Embedded 2048 Words)</h2>
+
+<p>A secure, interactive tool for working with BIP39 mnemonic seed phrases. Features live word suggestions, dice-based entropy generation, and compact encrypted Base58 storage.</p>
+
+<script>
+const WORDS = [
+"abandon","ability","able","about","above","absent","absorb","abstract","absurd","abuse",
+"access","accident","account","accuse","achieve","acid","acoustic","acquire","across","act",
+"action","actor","actress","actual","adapt","add","addict","address","adjust","admit",
+"adult","advance","advice","aerobic","affair","afford","afraid","again","age","agent",
+"agree","ahead","aim","air","airport","aisle","alarm","album","alcohol","alert",
+"alien","all","alley","allow","almost","alone","alpha","already","also","alter",
+"always","amateur","amazing","among","amount","amused","analyst","anchor","ancient","anger",
+"angle","angry","animal","ankle","announce","annual","another","answer","antenna","antique",
+"anxiety","any","apart","apology","appear","apple","approve","april","arch","arctic",
+"area","arena","argue","arm","armed","armor","army","around","arrange","arrest",
+"arrive","arrow","art","artefact","artist","artwork","ask","aspect","assault","asset",
+"assist","assume","asthma","athlete","atom","attack","attend","attitude","attract","auction",
+"audit","august","aunt","author","auto","autumn","average","avocado","avoid","awake",
+"aware","away","awesome","awful","awkward","axis","baby","bachelor","bacon","badge",
+"bag","balance","balcony","ball","bamboo","banana","banner","bar","barely","bargain",
+"barrel","base","basic","basket","battle","beach","bean","beauty","because","become",
+"beef","before","begin","behave","behind","believe","below","belt","bench","benefit",
+"best","betray","better","between","beyond","bicycle","bid","bike","bind","biology",
+"bird","birth","bitter","black","blade","blame","blanket","blast","bleak","bless",
+"blind","blood","blossom","blouse","blue","blur","blush","board","boat","body",
+"boil","bomb","bone","bonus","book","boost","border","boring","borrow","boss",
+"bottom","bounce","box","boy","bracket","brain","brand","brass","brave","bread",
+"breeze","brick","bridge","brief","bright","bring","brisk","broccoli","broken","bronze",
+"broom","brother","brown","brush","bubble","buddy","budget","buffalo","build","bulb",
+"bulk","bullet","bundle","bunker","burden","burger","burst","bus","business","busy",
+"butter","buyer","buzz","cabbage","cabin","cable","cactus","cage","cake","call",
+"calm","camera","camp","can","canal","cancel","candy","cannon","canoe","canvas",
+"canyon","capable","capital","captain","car","carbon","card","cargo","carpet","carry",
+"cart","case","cash","casino","castle","casual","cat","catalog","catch","category",
+"cattle","caught","cause","caution","cave","ceiling","celery","cement","census","century",
+"cereal","certain","chair","chalk","champion","change","chaos","chapter","charge","chase",
+"chat","cheap","check","cheese","chef","cherry","chest","chicken","chief","child",
+"chimney","choice","choose","chronic","chuckle","chunk","churn","cigar","cinnamon","circle",
+"citizen","city","civil","claim","clap","clarify","claw","clay","clean","clerk",
+"clever","click","client","cliff","climb","clinic","clip","clock","clog","close",
+"cloth","cloud","clown","club","clump","cluster","clutch","coach","coast","coconut",
+"code","coffee","coil","coin","collect","color","column","combine","come","comfort",
+"comic","common","company","concert","conduct","confirm","congress","connect","consider","control",
+"convince","cook","cool","copper","copy","coral","core","corn","correct","cost",
+"cotton","couch","country","couple","course","cousin","cover","coyote","crack","cradle",
+"craft","cram","crane","crash","crater","crawl","crazy","cream","credit","creek",
+"crew","cricket","crime","crisp","critic","crop","cross","crouch","crowd","crucial",
+"cruel","cruise","crumble","crunch","crush","cry","crystal","cube","culture","cup",
+"cupboard","curious","current","curtain","curve","cushion","custom","cute","cycle","dad",
+"damage","damp","dance","danger","daring","dash","daughter","dawn","day","deal",
+"debate","debris","decade","december","decide","decline","decorate","decrease","deer","defense",
+"define","defy","degree","delay","deliver","demand","demise","denial","dentist","deny",
+"depart","depend","deposit","depth","deputy","derive","describe","desert","design","desk",
+"despair","destroy","detail","detect","develop","device","devote","diagram","dial","diamond",
+"diary","dice","diesel","diet","differ","digital","dignity","dilemma","dinner","dinosaur",
+"direct","dirt","disagree","discover","disease","dish","dismiss","disorder","display","distance",
+"divert","divide","divorce","dizzy","doctor","document","dog","doll","dolphin","domain",
+"donate","donkey","donor","door","dose","double","dove","draft","dragon","drama",
+"drastic","draw","dream","dress","drift","drill","drink","drip","drive","drop",
+"drum","dry","duck","dumb","dune","during","dust","dutch","duty","dwarf",
+"dynamic","eager","eagle","early","earn","earth","easily","east","easy","echo",
+"ecology","economy","edge","edit","educate","effort","egg","eight","either","elbow",
+"elder","electric","elegant","element","elephant","elevator","elite","else","embark","embody",
+"embrace","emerge","emotion","employ","empower","empty","enable","enact","end","endless",
+"endorse","enemy","energy","enforce","engage","engine","enhance","enjoy","enlist","enough",
+"enrich","enroll","ensure","enter","entire","entry","envelope","episode","equal","equip",
+"era","erase","erode","erosion","error","erupt","escape","essay","essence","estate",
+"eternal","ethics","evidence","evil","evoke","evolve","exact","example","excess","exchange",
+"excite","exclude","excuse","execute","exercise","exhaust","exhibit","exile","exist","exit",
+"exotic","expand","expect","expire","explain","expose","express","extend","extra","eye",
+"eyebrow","fabric","face","faculty","fade","faint","faith","fall","false","fame",
+"family","famous","fan","fancy","fantasy","farm","fashion","fat","fatal","father",
+"fatigue","fault","favorite","feature","february","federal","fee","feed","feel","female",
+"fence","festival","fetch","fever","few","fiber","fiction","field","figure","file",
+"film","filter","final","find","fine","finger","finish","fire","firm","first",
+"fiscal","fish","fit","fitness","fix","flag","flame","flash","flat","flavor",
+"flee","flight","flip","float","flock","floor","flower","fluid","flush","fly",
+"foam","focus","fog","foil","fold","follow","food","foot","force","forest",
+"forget","fork","fortune","forum","forward","fossil","foster","found","fox","fragile",
+"frame","frequent","fresh","friend","fringe","frog","front","frost","frown","frozen",
+"fruit","fuel","fun","funny","furnace","fury","future","gadget","gain","galaxy",
+"gallery","game","gap","garage","garbage","garden","garlic","garment","gas","gasp",
+"gate","gather","gauge","gaze","general","genius","genre","gentle","genuine","gesture",
+"ghost","giant","gift","giggle","ginger","giraffe","girl","give","glad","glance",
+"glare","glass","glide","glimpse","globe","gloom","glory","glove","glow","glue",
+"goat","goddess","gold","good","goose","gorilla","gospel","gossip","govern","gown",
+"grab","grace","grain","grant","grape","grass","gravity","great","green","grid",
+"grief","grit","grocery","group","grow","grunt","guard","guess","guide","guilt",
+"guitar","gun","gym","habit","hair","half","hammer","hamster","hand","happy",
+"harbor","hard","harsh","harvest","hat","have","hawk","hazard","head","health",
+"heart","heavy","hedgehog","height","hello","helmet","help","hen","hero","hidden",
+"high","hill","hint","hip","hire","history","hobby","hockey","hold","hole",
+"holiday","hollow","home","honey","hood","hope","horn","horror","horse","hospital",
+"host","hotel","hour","hover","hub","huge","human","humble","humor","hundred",
+"hungry","hunt","hurdle","hurry","hurt","husband","hybrid","ice","icon","idea",
+"identify","idle","ignore","ill","illegal","illness","image","imitate","immense","immune",
+"impact","impose","improve","impulse","inch","include","income","increase","index","indicate",
+"indoor","industry","infant","inflict","inform","inhale","inherit","initial","inject","injury",
+"inmate","inner","innocent","input","inquiry","insane","insect","inside","inspire","install",
+"intact","interest","into","invest","invite","involve","iron","island","isolate","issue",
+"item","ivory","jacket","jaguar","jar","jazz","jealous","jeans","jelly","jewel",
+"job","join","joke","journey","joy","judge","juice","jump","jungle","junior",
+"junk","just","kangaroo","keen","keep","ketchup","key","kick","kid","kidney",
+"kind","kingdom","kiss","kit","kitchen","kite","kitten","kiwi","knee","knife",
+"knock","know","lab","label","labor","ladder","lady","lake","lamp","language",
+"laptop","large","later","latin","laugh","laundry","lava","law","lawn","lawsuit",
+"layer","lazy","leader","leaf","learn","leave","lecture","left","leg","legal",
+"legend","leisure","lemon","lend","length","lens","leopard","lesson","letter","level",
+"liar","liberty","library","license","life","lift","light","like","limb","limit",
+"link","lion","liquid","list","little","live","lizard","load","loan","lobster",
+"local","lock","logic","lonely","long","loop","lottery","loud","lounge","love",
+"loyal","lucky","luggage","lumber","lunar","lunch","luxury","lyrics","machine","mad",
+"magic","magnet","maid","mail","main","major","make","mammal","man","manage",
+"mandate","mango","mansion","manual","maple","marble","march","margin","marine","market",
+"marriage","mask","mass","master","match","material","math","matrix","matter","maximum",
+"maze","meadow","mean","measure","meat","mechanic","medal","media","melody","melt",
+"member","memory","mention","menu","mercy","merge","merit","merry","mesh","message",
+"metal","method","middle","midnight","milk","million","mimic","mind","minimum","minor",
+"minute","miracle","mirror","misery","miss","mistake","mix","mixed","mixture","mobile",
+"model","modify","mom","moment","monitor","monkey","monster","month","moon","moral",
+"more","morning","mosquito","mother","motion","motor","mountain","mouse","move","movie",
+"much","muffin","mule","multiply","muscle","museum","mushroom","music","must","mutual",
+"myself","mystery","myth","naive","name","napkin","narrow","nasty","nation","nature",
+"near","neck","need","negative","neglect","neither","nephew","nerve","nest","net",
+"network","neutral","never","news","next","nice","night","noble","noise","nominee",
+"noodle","normal","north","nose","notable","note","nothing","notice","novel","now",
+"nuclear","number","nurse","nut","oak","obey","object","oblige","obscure","observe",
+"obtain","obvious","occur","ocean","october","odor","off","offer","office","often",
+"oil","okay","old","olive","olympic","omit","once","one","onion","online",
+"only","open","opera","opinion","oppose","option","orange","orbit","orchard","order",
+"ordinary","organ","orient","original","orphan","ostrich","other","outdoor","outer","output",
+"outside","oval","oven","over","own","owner","oxygen","oyster","ozone","pact",
+"paddle","page","pair","palace","palm","panda","panel","panic","panther","paper",
+"parade","parent","park","parrot","party","pass","patch","path","patient","patrol",
+"pattern","pause","pave","payment","peace","peanut","pear","pelican","pen","penalty",
+"pencil","people","pepper","perfect","permit","person","pet","phone","photo","phrase",
+"physical","piano","picnic","picture","piece","pig","pigeon","pill","pilot","pink",
+"pioneer","pipe","pistol","pitch","pizza","place","planet","plastic","plate","play",
+"please","pledge","pluck","plug","plunge","poem","poet","point","polar","pole",
+"police","pond","pony","pool","popular","portion","position","possible","post","potato",
+"pottery","poverty","powder","power","practice","praise","predict","prefer","prepare","present",
+"pretty","prevent","price","pride","primary","print","priority","prison","private","prize",
+"problem","process","produce","profit","program","project","promote","proof","property","prosper",
+"protect","proud","provide","public","pudding","pull","pulp","pulse","pumpkin","punch",
+"pupil","puppy","purchase","purity","purpose","purse","push","put","puzzle","pyramid",
+"quality","quantum","quarter","question","quick","quit","quiz","quote","rabbit","raccoon",
+"race","rack","radar","radio","rail","rain","raise","rally","ramp","ranch",
+"random","range","rapid","rare","rate","rather","raven","raw","razor","ready",
+"real","reason","rebel","rebuild","recall","receive","recipe","record","recycle","reduce",
+"reflect","reform","refuse","region","regret","regular","reject","relax","release","relief",
+"rely","remain","remember","remind","remove","render","renew","rent","reopen","repair",
+"repeat","replace","report","require","rescue","resemble","resist","resource","response","result",
+"retire","retreat","return","reunion","reveal","review","reward","rhythm","rib","ribbon",
+"rice","rich","ride","ridge","rifle","right","rigid","ring","riot","ripple",
+"risk","ritual","rival","river","road","roast","robot","robust","rocket","romance",
+"roof","rookie","room","rose","rotate","rough","round","route","royal","rubber",
+"rude","rug","rule","run","runway","rural","sad","saddle","sadness","safe",
+"sail","salad","salmon","salon","salt","salute","same","sample","sand","satisfy",
+"satoshi","sauce","sausage","save","say","scale","scan","scare","scatter","scene",
+"scent","school","science","scissors","scorpion","scout","scrap","screen","script","scrub",
+"sea","search","season","seat","second","secret","section","security","seed","seek",
+"segment","select","sell","seminar","senior","sense","sentence","series","service","session",
+"settle","setup","seven","shadow","shaft","shallow","share","shed","shell","sheriff",
+"shield","shift","shine","ship","shiver","shock","shoe","shoot","shop","short",
+"shoulder","shove","shrimp","shrug","shuffle","shy","sibling","sick","side","siege",
+"sight","sign","silent","silk","silly","silver","similar","simple","since","sing",
+"siren","sister","situate","six","size","skate","sketch","ski","skill","skin",
+"skirt","skull","slab","slam","sleep","slender","slice","slide","slight","slim",
+"slogan","slot","slow","slush","small","smart","smile","smoke","smooth","snack",
+"snake","snap","sniff","snow","soap","soccer","social","sock","soda","soft",
+"solar","soldier","solid","solution","solve","someone","song","soon","sorry","sort",
+"soul","sound","soup","source","south","space","spare","spatial","spawn","speak",
+"special","speed","spell","spend","sphere","spice","spider","spike","spin","spirit",
+"split","spoil","sponsor","spoon","sport","spot","spray","spread","spring","spy",
+"square","squeeze","squirrel","stable","stadium","staff","stage","stairs","stamp","stand",
+"start","state","stay","steak","steel","stem","step","stereo","stick","still",
+"sting","stock","stomach","stone","stool","story","stove","strategy","street","strike",
+"strong","struggle","student","stuff","stumble","style","subject","submit","subway","success",
+"such","sudden","suffer","sugar","suggest","suit","summer","sun","sunny","sunset",
+"super","supply","supreme","sure","surface","surge","surprise","surround","survey","suspect",
+"sustain","swallow","swamp","swap","swarm","swear","sweet","swift","swim","swing",
+"switch","sword","symbol","symptom","syrup","system","table","tackle","tag","tail",
+"talent","talk","tank","tape","target","task","taste","tattoo","taxi","teach",
+"team","tell","ten","tenant","tennis","tent","term","test","text","thank",
+"that","theme","then","theory","there","they","thing","this","thought","three",
+"thrive","throw","thumb","thunder","ticket","tide","tiger","tilt","timber","time",
+"tiny","tip","tired","tissue","title","toast","tobacco","today","toddler","toe",
+"together","toilet","token","tomato","tomorrow","tone","tongue","tonight","tool","tooth",
+"top","topic","topple","torch","tornado","tortoise","toss","total","tourist","toward",
+"tower","town","toy","track","trade","traffic","tragic","train","transfer","trap",
+"trash","travel","tray","treat","tree","trend","trial","tribe","trick","trigger",
+"trim","trip","trophy","trouble","truck","true","truly","trumpet","trust","truth",
+"try","tube","tuition","tumble","tuna","tunnel","turkey","turn","turtle","twelve",
+"twenty","twice","twin","twist","two","type","typical","ugly","umbrella","unable",
+"unaware","uncle","uncover","under","undo","unfair","unfold","unhappy","uniform","unique",
+"unit","universe","unknown","unlock","until","unusual","unveil","update","upgrade","uphold",
+"upon","upper","upset","urban","urge","usage","use","used","useful","useless",
+"usual","utility","vacant","vacuum","vague","valid","valley","valve","van","vanish",
+"vapor","various","vast","vault","vehicle","velvet","vendor","venture","venue","verb",
+"verify","version","very","vessel","veteran","viable","vibrant","vicious","victory","video",
+"view","village","vintage","violin","virtual","virus","visa","visit","visual","vital",
+"vivid","vocal","voice","void","volcano","volume","vote","voyage","wage","wagon",
+"wait","walk","wall","walnut","want","warfare","warm","warrior","wash","wasp",
+"waste","water","wave","way","wealth","weapon","wear","weasel","weather","web",
+"wedding","weekend","weird","welcome","west","wet","whale","what","wheat","wheel",
+"when","where","whip","whisper","wide","width","wife","wild","will","win",
+"window","wine","wing","wink","winner","winter","wire","wisdom","wise","wish",
+"witness","wolf","woman","wonder","wood","wool","word","work","world","worry",
+"worth","wrap","wreck","wrestle","wrist","write","wrong","yard","year","yellow",
+"you","young","youth","zebra","zero","zone","zoo"
+];
+
+// ================= CRYPTO FUNCTIONS =================
+
+function sha256(data) {
+  const buffer = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+  return crypto.subtle.digest('SHA-256', buffer);
+}
+
+async function sha256Sync(data) {
+  return new Uint8Array(await sha256(data));
+}
+
+function xorBytes(data, keyHash) {
+  const keyHashArray = new Uint8Array(keyHash);
+  return new Uint8Array(data.map((b, i) => b ^ keyHashArray[i % keyHashArray.length]));
+}
+
+// ================= BASE58 ENCODING =================
+
+const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+function base58Encode(bytes) {
+  let num = BigInt('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''));
+  let encoded = '';
+  while (num > 0n) {
+    encoded = BASE58_ALPHABET[Number(num % 58n)] + encoded;
+    num = num / 58n;
+  }
+  for (let i = 0; i < bytes.length && bytes[i] === 0; i++) {
+    encoded = '1' + encoded;
+  }
+  return encoded;
+}
+
+function base58Decode(str) {
+  // Count leading '1's
+  let leadingOnes = 0;
+  for (let i = 0; i < str.length && str[i] === '1'; i++) {
+    leadingOnes++;
+  }
+  
+  // Convert base58 to number
+  let num = 0n;
+  for (let char of str) {
+    const idx = BASE58_ALPHABET.indexOf(char);
+    if (idx === -1) throw new Error('Invalid Base58 character');
+    num = num * 58n + BigInt(idx);
+  }
+  
+  // Convert to hex
+  let hex = num.toString(16);
+  if (hex.length % 2) hex = '0' + hex;
+  
+  // Convert hex to bytes
+  const bytes = [];
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes.push(parseInt(hex.substr(i, 2), 16));
+  }
+  
+  // Add leading zeros
+  for (let i = 0; i < leadingOnes; i++) {
+    bytes.unshift(0);
+  }
+  
+  return new Uint8Array(bytes);
+}
+
+// ================= BIP39 FUNCTIONS =================
+
+function wordsToIndices(words) {
+  return words.map(w => WORDS.indexOf(w.toLowerCase()));
+}
+
+function indicesToBits(indices) {
+  return indices.map(i => i.toString(2).padStart(11, '0')).join('');
+}
+
+function bitsToIndices(bits) {
+  const indices = [];
+  for (let i = 0; i < bits.length; i += 11) {
+    indices.push(parseInt(bits.substr(i, 11), 2));
+  }
+  return indices;
+}
+
+function mnemonicToEntropy(words) {
+  const indices = wordsToIndices(words);
+  const bits = indicesToBits(indices);
+  const entropyBits = bits.substr(0, 256);
+  const bytes = [];
+  for (let i = 0; i < entropyBits.length; i += 8) {
+    bytes.push(parseInt(entropyBits.substr(i, 8), 2));
+  }
+  return new Uint8Array(bytes);
+}
+
+async function entropyToMnemonic(entropyBytes) {
+  const hash = await sha256Sync(entropyBytes);
+  const checksumBits = Array.from(hash).map(b => b.toString(2).padStart(8, '0')).join('').substr(0, 8);
+  const entropyBits = Array.from(entropyBytes).map(b => b.toString(2).padStart(8, '0')).join('');
+  const fullBits = entropyBits + checksumBits;
+  const indices = bitsToIndices(fullBits);
+  return indices.map(i => WORDS[i]);
+}
+
+async function validateChecksum(words) {
+  const indices = wordsToIndices(words);
+  const bits = indicesToBits(indices);
+  const entropyBits = bits.substr(0, 256);
+  const checksumBits = bits.substr(256, 8);
+  
+  const entropyBytes = [];
+  for (let i = 0; i < entropyBits.length; i += 8) {
+    entropyBytes.push(parseInt(entropyBits.substr(i, 8), 2));
+  }
+  
+  const hash = await sha256Sync(new Uint8Array(entropyBytes));
+  const expectedChecksum = Array.from(hash).map(b => b.toString(2).padStart(8, '0')).join('').substr(0, 8);
+  
+  return checksumBits === expectedChecksum;
+}
+
+// ================= UI FUNCTIONS =================
+
+function showSuggestions(input, suggestionDiv) {
+  const value = input.value.toLowerCase();
+  suggestionDiv.innerHTML = '';
+  
+  if (!value) {
+    suggestionDiv.style.display = 'none';
+    return;
+  }
+  
+  const matches = WORDS.filter(w => w.startsWith(value)).slice(0, 9);
+  
+  if (matches.length === 0) {
+    suggestionDiv.style.display = 'none';
+    return;
+  }
+  
+  matches.forEach(word => {
+    const div = document.createElement('div');
+    div.className = 'suggestion-item';
+    div.textContent = word;
+    div.onclick = () => {
+      input.value = word;
+      suggestionDiv.style.display = 'none';
+      input.dispatchEvent(new Event('input'));
+    };
+    suggestionDiv.appendChild(div);
+  });
+  
+  suggestionDiv.style.display = 'block';
+  suggestionDiv.style.width = input.offsetWidth + 'px';
+}
+
+// ================= SECTION 1: DICE TO BIP39 =================
+
+async function generateFromDice() {
+  const diceInput = document.getElementById('diceInput').value;
+  const output = document.getElementById('diceOutput');
+  
+  // Validate dice input
+  if (!/^[1-6]+$/.test(diceInput)) {
+    output.innerHTML = '<span class="error">Error: Dice string must contain only digits 1-6</span>';
+    return;
+  }
+  
+  if (diceInput.length < 98) {
+    output.innerHTML = `<span class="error">Error: At least 98 dice rolls required, you provided ${diceInput.length}</span>`;
+    return;
+  }
+  
+  // Convert dice rolls to base-6 digits (0-5)
+  const diceDigits = diceInput.split('').map(d => parseInt(d) - 1).join('');
+  const trimmed = diceDigits.slice(-99); // Use last 99 digits
+  
+  // Convert base-6 to number, then to 32-byte entropy
+  let num = 0n;
+  for (let digit of trimmed) {
+    num = num * 6n + BigInt(digit);
+  }
+  
+  const hex = num.toString(16).padStart(64, '0');
+  const entropy = new Uint8Array(32);
+  for (let i = 0; i < 32; i++) {
+    entropy[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  
+  // Generate mnemonic
+  const mnemonic = await entropyToMnemonic(entropy);
+  
+  output.innerHTML = `<div class="success">✓ Generated BIP39 Mnemonic:</div><div class="output">${mnemonic.join(' ')}</div>`;
+  
+  // Generate QR code for the mnemonic
+  generateQRCode(mnemonic.join(' '), 'qrIconDice', 'qrcodeDice');
+  
+  // Fill the words into Section 2 (BIP39 Checker)
+  for (let i = 0; i < 24; i++) {
+    const input = document.getElementById(`word${i + 1}`);
+    if (input) {
+      input.value = mnemonic[i];
+      // Hide suggestions for this input
+      const suggestionDiv = input.parentElement.querySelector('.suggestions');
+      if (suggestionDiv) {
+        suggestionDiv.style.display = 'none';
+      }
+    }
+  }
+  
+  // Automatically validate checksum in Section 2
+  await checkBip39();
+}
+
+// ================= SECTION 2: BIP39 CHECKER =================
+
+function createWordInputs() {
+  const container = document.getElementById('wordInputsContainer');
+  container.innerHTML = '';
+  
+  for (let i = 1; i <= 24; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'word-container';
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'word-input';
+    input.id = `word${i}`;
+    input.placeholder = `Word ${i}`;
+    input.autocomplete = 'off';
+    
+    const suggestionDiv = document.createElement('div');
+    suggestionDiv.className = 'suggestions';
+    suggestionDiv.style.display = 'none';
+    
+    input.addEventListener('input', () => showSuggestions(input, suggestionDiv));
+    input.addEventListener('blur', () => setTimeout(() => suggestionDiv.style.display = 'none', 200));
+    input.addEventListener('focus', () => showSuggestions(input, suggestionDiv));
+    
+    wrapper.appendChild(input);
+    wrapper.appendChild(suggestionDiv);
+    container.appendChild(wrapper);
+  }
+}
+
+async function checkBip39() {
+  const words = [];
+  for (let i = 1; i <= 24; i++) {
+    const word = document.getElementById(`word${i}`).value.toLowerCase().trim();
+    if (!word) {
+      document.getElementById('checkerOutput').innerHTML = '<span class="error">Error: Please fill in all 24 words</span>';
+      return;
+    }
+    if (!WORDS.includes(word)) {
+      document.getElementById('checkerOutput').innerHTML = `<span class="error">Error: "${word}" is not a valid BIP39 word</span>`;
+      return;
+    }
+    words.push(word);
+  }
+  
+  const isValid = await validateChecksum(words);
+  const output = document.getElementById('checkerOutput');
+  
+  if (isValid) {
+    output.innerHTML = `<div class="success">✅ BIP39 CHECKSUM OK</div>`;
+    // Copy the validated mnemonic to Section 3 encode input
+    document.getElementById('encodeInput').value = words.join(' ');
+  } else {
+    output.innerHTML = '<span class="error">❌ CHECKSUM FAILED</span>';
+  }
+}
+
+// ================= SECTION 3: ENCODE TO BASE58 =================
+
+async function encodeToBase58() {
+  const mnemonicInput = document.getElementById('encodeInput').value.trim();
+  const passphrase = document.getElementById('encodePassphrase').value;
+  const output = document.getElementById('encodeOutput');
+  
+  if (!passphrase) {
+    output.innerHTML = '<span class="error">Error: Passphrase is required</span>';
+    return;
+  }
+  
+  const words = mnemonicInput.split(/\s+/).filter(w => w.length > 0);
+  
+  if (words.length !== 24) {
+    output.innerHTML = '<span class="error">Error: Exactly 24 words required</span>';
+    return;
+  }
+  
+  // Validate all words and convert to lowercase
+  const normalizedWords = [];
+  for (let word of words) {
+    const lowerWord = word.toLowerCase();
+    if (!WORDS.includes(lowerWord)) {
+      output.innerHTML = `<span class="error">Error: "${word}" is not a valid BIP39 word</span>`;
+      return;
+    }
+    normalizedWords.push(lowerWord);
+  }
+  
+  // Check checksum
+  const isValid = await validateChecksum(normalizedWords);
+  if (!isValid) {
+    output.innerHTML = '<span class="error">Error: Invalid BIP39 checksum</span>';
+    return;
+  }
+  
+  // Convert to entropy
+  const entropy = mnemonicToEntropy(normalizedWords);
+  
+  // Create HMAC
+  const passphraseBytes = new TextEncoder().encode(passphrase);
+  const combined = new Uint8Array(entropy.length + passphraseBytes.length);
+  combined.set(entropy);
+  combined.set(passphraseBytes, entropy.length);
+  const hmac = await sha256Sync(combined);
+  
+  // Combine entropy + HMAC (first 4 bytes)
+  const toEncrypt = new Uint8Array(36);
+  toEncrypt.set(entropy);
+  toEncrypt.set(hmac.slice(0, 4), 32);
+  
+  // XOR encrypt
+  const keyHash = await sha256Sync(passphraseBytes);
+  const encrypted = xorBytes(toEncrypt, keyHash);
+  
+  // Base58 encode
+  const base58Str = base58Encode(encrypted);
+  
+  // Format with spaces every 5 characters for display
+  const formattedBase58 = base58Str.match(/.{1,5}/g).join(' ');
+  
+  output.innerHTML = `<div class="success">✓ Encrypted Base58 (${base58Str.length} characters):</div><div class="output">${formattedBase58}</div>`;
+  
+  // Generate QR code (without spaces)
+  generateQRCode(base58Str, 'qrIcon', 'qrcode');
+  
+  // Copy the formatted Base58 result and passphrase to Section 4 decode inputs
+  document.getElementById('decodeInput').value = formattedBase58;
+  document.getElementById('decodePassphrase').value = passphrase;
+  
+  // Show the Linux License tip section and store the base58 string
+  document.getElementById('licenseTip').style.display = 'block';
+  window.currentBase58 = formattedBase58;
+}
+
+function showLicenseCard() {
+  if (!window.currentBase58) return;
+  
+  // Format license key with line breaks after every 5 blocks
+  const blocks = window.currentBase58.split(' ');
+  let formattedKey = '';
+  for (let i = 0; i < blocks.length; i++) {
+    formattedKey += blocks[i];
+    if ((i + 1) % 5 === 0 && i < blocks.length - 1) {
+      formattedKey += '<br>';
+    } else if (i < blocks.length - 1) {
+      formattedKey += ' ';
+    }
+  }
+  
+  // Populate license card
+  document.getElementById('licenseKey').innerHTML = formattedKey;
+  
+  // Generate QR code for the license key
+  const qrDiv = document.getElementById('licenseQrDisplay');
+  qrDiv.innerHTML = ''; // Clear previous QR code
+  const licenseKeyText = window.currentBase58.replace(/\s/g, '');
+  new QRCode(qrDiv, {
+    text: licenseKeyText,
+    width: 150,
+    height: 150,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.H
+  });
+  
+  // Show card
+  document.getElementById('licenseBackdrop').style.display = 'block';
+  document.getElementById('licenseCard').style.display = 'block';
+}
+
+function hideLicenseCard() {
+  document.getElementById('licenseBackdrop').style.display = 'none';
+  document.getElementById('licenseCard').style.display = 'none';
+}
+
+function saveLicenseAsPNG() {
+  const card = document.getElementById('licenseCard');
+  
+  html2canvas(card, {
+    backgroundColor: null,
+    scale: 2
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'linux-license-key.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+
+function printLicense() {
+  if (!window.currentBase58) return;
+  
+  const printWindow = window.open('', '_blank');
+  const licenseKeyText = window.currentBase58.replace(/\s/g, '');
+  
+  // Format license key with line breaks after every 5 blocks
+  const blocks = window.currentBase58.split(' ');
+  let formattedKeyPrint = '';
+  for (let i = 0; i < blocks.length; i++) {
+    formattedKeyPrint += blocks[i];
+    if ((i + 1) % 5 === 0 && i < blocks.length - 1) {
+      formattedKeyPrint += '<br>';
+    } else if (i < blocks.length - 1) {
+      formattedKeyPrint += ' ';
+    }
+  }
+  
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Linux Enterprise License</title>
+        <script src="qrcode.min.js"><\/script>
+        <style>
+          @page { size: 3.5in 2in; margin: 0; }
+          body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; width: 3.5in; height: 2in; background: white; }
+          .license-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.15in 0.2in;
+            border-radius: 0.1in;
+            width: 3.1in;
+            height: 1.7in;
+            font-family: 'Courier New', monospace;
+            box-shadow: none;
+            box-sizing: border-box;
+            border: 1px dashed #999;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+          }
+          .license-card::before {
+            content: '';
+            position: absolute;
+            top: -0.05in;
+            left: -0.05in;
+            right: -0.05in;
+            bottom: -0.05in;
+            border: 1px dashed #666;
+            pointer-events: none;
+          }
+          .license-card h2 { margin: 0 0 0.08in 0; font-size: 10pt; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 0.04in; text-align: center; }
+          .license-content { display: flex; gap: 0.08in; flex: 1; }
+          .license-text { flex: 1; display: flex; flex-direction: column; }
+          .license-qr { width: 0.64in; height: 0.64in; background: white; padding: 0.03in; border-radius: 0.03in; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+          .license-qr canvas { width: 100% !important; height: 100% !important; object-fit: contain; }
+          .license-info { margin: 0.04in 0; }
+          .license-info label { display: block; font-size: 5.5pt; opacity: 0.8; margin-bottom: 0.02in; text-transform: uppercase; letter-spacing: 0.3px; }
+          .license-info .value { font-size: 6pt; font-weight: bold; background: rgba(0,0,0,0.2); padding: 0.03in 0.04in; border-radius: 0.03in; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.3; }
+          .license-footer { margin-top: auto; padding-top: 0.04in; border-top: 1px solid rgba(255,255,255,0.2); font-size: 4.5pt; opacity: 0.7; text-align: center; line-height: 1.2; }
+        </style>
+      </head>
+      <body>
+        <div class="license-card">
+          <h2>🐧 Linux Enterprise License</h2>
+          <div class="license-content">
+            <div class="license-text">
+              <div class="license-info">
+                <label>License Type:</label>
+                <div class="value">Premium Support Subscription</div>
+              </div>
+              <div class="license-info">
+                <label>License Key:</label>
+                <div class="value">${formattedKeyPrint}</div>
+              </div>
+            </div>
+            <div class="license-qr">
+              <div id="printQrCode"></div>
+            </div>
+          </div>
+          <div class="license-footer">
+            This license key is confidential and proprietary. Do not share or distribute.
+          </div>
+        </div>
+        <script>
+          setTimeout(function() {
+            new QRCode(document.getElementById('printQrCode'), {
+              text: '${licenseKeyText}',
+              width: 64,
+              height: 64,
+              colorDark: "#000000",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.H
+            });
+          }, 100);
+        <\/script>
+      </body>
+    </html>
+  `);
+  
+  printWindow.document.close();
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 500);
+}
+
+function generateQRCode(text, iconId, qrcodeId) {
+  const qrIcon = document.getElementById(iconId);
+  const qrCodeDiv = document.getElementById(qrcodeId);
+  
+  // Clear previous QR code
+  qrCodeDiv.innerHTML = '';
+  
+  // Show the QR icon
+  qrIcon.style.display = 'inline-block';
+  
+  // Generate new QR code
+  new QRCode(qrCodeDiv, {
+    text: text,
+    width: 256,
+    height: 256,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.H
+  });
+}
+
+// ================= SECTION 4: DECODE FROM BASE58 =================
+
+async function decodeFromBase58() {
+  const base58Input = document.getElementById('decodeInput').value.trim();
+  const passphrase = document.getElementById('decodePassphrase').value;
+  const output = document.getElementById('decodeOutput');
+  
+  if (!passphrase) {
+    output.innerHTML = '<span class="error">Error: Passphrase is required</span>';
+    return;
+  }
+  
+  if (!base58Input) {
+    output.innerHTML = '<span class="error">Error: Base58 string is required</span>';
+    return;
+  }
+  
+  try {
+    // Remove spaces and dashes from Base58 input
+    const cleanedBase58 = base58Input.replace(/[\s\-]/g, '');
+    
+    // Decode Base58
+    const encrypted = base58Decode(cleanedBase58);
+    
+    if (encrypted.length !== 36) {
+      output.innerHTML = `<span class="error">Error: Invalid Base58 data length (expected 36 bytes, got ${encrypted.length})</span>`;
+      return;
+    }
+    
+    // XOR decrypt
+    const passphraseBytes = new TextEncoder().encode(passphrase);
+    const keyHash = await sha256Sync(passphraseBytes);
+    const decrypted = xorBytes(encrypted, keyHash);
+    
+    // Split entropy and HMAC
+    const entropy = decrypted.slice(0, 32);
+    const hmacCheck = decrypted.slice(32, 36);
+    
+    // Verify HMAC
+    const combined = new Uint8Array(entropy.length + passphraseBytes.length);
+    combined.set(entropy);
+    combined.set(passphraseBytes, entropy.length);
+    const expectedHmac = await sha256Sync(combined);
+    
+    let hmacMatch = true;
+    for (let i = 0; i < 4; i++) {
+      if (hmacCheck[i] !== expectedHmac[i]) {
+        hmacMatch = false;
+        break;
+      }
+    }
+    
+    if (!hmacMatch) {
+      output.innerHTML = '<span class="error">❌ Wrong passphrase or corrupted data</span>';
+      return;
+    }
+    
+    // Convert entropy to mnemonic
+    const mnemonic = await entropyToMnemonic(entropy);
+    
+    // Validate checksum
+    const isValid = await validateChecksum(mnemonic);
+    
+    if (isValid) {
+      output.innerHTML = `<div class="success">✅ Decoded successfully! BIP39 CHECKSUM OK</div><div class="output">${mnemonic.join(' ')}</div>`;
+      // Generate QR code for the decoded mnemonic
+      generateQRCode(mnemonic.join(' '), 'qrIconDecode', 'qrcodeDecode');
+    } else {
+      output.innerHTML = `<div class="error">⚠ Decoded but checksum validation failed:</div><div class="output">${mnemonic.join(' ')}</div>`;
+      // Generate QR code even if checksum failed
+      generateQRCode(mnemonic.join(' '), 'qrIconDecode', 'qrcodeDecode');
+    }
+    
+  } catch (e) {
+    output.innerHTML = `<span class="error">Error decoding: ${e.message}</span>`;
+  }
+}
+
+// Initialize word inputs when page loads
+window.addEventListener('DOMContentLoaded', () => {
+  createWordInputs();
+  clearAllInputs();
+});
+
+function clearAllInputs() {
+  // Clear all text inputs and textareas
+  document.querySelectorAll('input[type="text"], input[type="password"], textarea').forEach(input => {
+    input.value = '';
+  });
+  
+  // Clear all output divs
+  document.getElementById('diceOutput').innerHTML = '';
+  document.getElementById('checkerOutput').innerHTML = '';
+  document.getElementById('encodeOutput').innerHTML = '';
+  document.getElementById('decodeOutput').innerHTML = '';
+  
+  // Hide all QR icons
+  document.getElementById('qrIconDice').style.display = 'none';
+  document.getElementById('qrIcon').style.display = 'none';
+  document.getElementById('qrIconDecode').style.display = 'none';
+  
+  // Clear QR code divs
+  document.getElementById('qrcodeDice').innerHTML = '';
+  document.getElementById('qrcode').innerHTML = '';
+  document.getElementById('qrcodeDecode').innerHTML = '';
+  
+  // Hide license tip section and clear stored data
+  document.getElementById('licenseTip').style.display = 'none';
+  window.currentBase58 = null;
+  hideLicenseCard();
+}
+
+</script>
+
+<!-- ================= SECTION 1: DICE TO BIP39 ================= -->
+<div class="section">
+  <h3>1. Generate BIP39 from Dice Rolls</h3>
+  <p>Enter at least 98 dice rolls (1-6) as a continuous string:</p>
+  <label for="diceInput">Dice Rolls (1-6):</label>
+  <textarea id="diceInput" rows="3" placeholder="e.g., 123456123456..."></textarea>
+  <button onclick="generateFromDice()">Generate BIP39 Mnemonic</button>
+  <div class="output-with-qr">
+    <div id="diceOutput"></div>
+    <div class="qr-icon-container">
+      <div class="qr-icon" id="qrIconDice">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm11 0h2v2h-2v-2zm-3 0h2v2h-2v-2zm6 0h2v5h-2v-5zm0 6h2v2h-2v-2zm-3 0h2v2h-2v-2zm-3-3h2v5h-2v-5z"/>
+        </svg>
+      </div>
+      <div class="qr-popup">
+        <div id="qrcodeDice"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SECTION 2: BIP39 CHECKER ================= -->
+<div class="section">
+  <h3>2. BIP39 Checker with Word Suggestions</h3>
+  <p>Enter 24 BIP39 words. Suggestions appear as you type:</p>
+  <div id="wordInputsContainer"></div>
+  <button onclick="checkBip39()">Validate BIP39 Checksum</button>
+  <div id="checkerOutput"></div>
+</div>
+
+<!-- ================= SECTION 3: ENCODE TO BASE58 ================= -->
+<div class="section">
+  <h3>3. Encrypt BIP39 to Base58</h3>
+  <p>Enter your 24-word BIP39 mnemonic and a passphrase to encrypt it:</p>
+  <label for="encodeInput">BIP39 Mnemonic (24 words):</label>
+  <textarea id="encodeInput" rows="3" placeholder="Enter 24 words separated by spaces"></textarea>
+  <label for="encodePassphrase">Passphrase:</label>
+  <input type="password" id="encodePassphrase" placeholder="Enter encryption passphrase">
+  <button onclick="encodeToBase58()">Encrypt to Base58</button>
+  <div class="output-with-qr">
+    <div id="encodeOutput"></div>
+    <div class="qr-icon-container">
+      <div class="qr-icon" id="qrIcon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm11 0h2v2h-2v-2zm-3 0h2v2h-2v-2zm6 0h2v5h-2v-5zm0 6h2v2h-2v-2zm-3 0h2v2h-2v-2zm-3-3h2v5h-2v-5z"/>
+        </svg>
+      </div>
+      <div class="qr-popup">
+        <div id="qrcode"></div>
+      </div>
+    </div>
+  </div>
+  <div id="licenseTip" style="display:none; margin-top:20px; padding:15px; background:#e7f3ff; border-left:4px solid #2196F3; border-radius:4px;">
+    <strong>💡 Privacy Tip:</strong> You can disguise your wallet seed as a fake "Linux Enterprise License" in business card format. 
+    This allows you to carry it safely in your wallet - it looks like a technical license key, so nobody will suspect it's actually your crypto wallet seed. 
+    You can view, print, or save it as PNG.
+    <br><br>
+    <button class="show-license-btn" id="showLicenseBtn" onclick="showLicenseCard()">🐧 Show as Linux License</button>
+  </div>
+</div>
+
+<!-- ================= SECTION 4: DECODE FROM BASE58 ================= -->
+<div class="section">
+  <h3>4. Decrypt Base58 to BIP39</h3>
+  <p>Enter the Base58 string and the passphrase to decrypt it:</p>
+  <label for="decodeInput">Base58 String:</label>
+  <input type="text" id="decodeInput" placeholder="Enter Base58 string">
+  <label for="decodePassphrase">Passphrase:</label>
+  <input type="password" id="decodePassphrase" placeholder="Enter decryption passphrase">
+  <button onclick="decodeFromBase58()">Decrypt to BIP39</button>
+  <div class="output-with-qr">
+    <div id="decodeOutput"></div>
+    <div class="qr-icon-container">
+      <div class="qr-icon" id="qrIconDecode">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm11 0h2v2h-2v-2zm-3 0h2v2h-2v-2zm6 0h2v5h-2v-5zm0 6h2v2h-2v-2zm-3 0h2v2h-2v-2zm-3-3h2v5h-2v-5z"/>
+        </svg>
+      </div>
+      <div class="qr-popup">
+        <div id="qrcodeDecode"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- License Card Overlay -->
+<div class="license-backdrop" id="licenseBackdrop" onclick="hideLicenseCard()"></div>
+<div class="license-card" id="licenseCard" onclick="event.stopPropagation()">
+  <div class="license-actions">
+    <button class="license-action-btn" onclick="saveLicenseAsPNG()" title="Save as PNG">💾</button>
+    <button class="license-action-btn" onclick="printLicense()" title="Print">🖨️</button>
+    <button class="license-close" onclick="hideLicenseCard()">✕</button>
+  </div>
+  <h2>🐧 Linux Enterprise License</h2>
+  <div class="license-content-display">
+    <div class="license-text-display">
+      <div class="license-info">
+        <label>License Type:</label>
+        <div class="value">Premium Support Subscription</div>
+      </div>
+      <div class="license-info">
+        <label>License Key:</label>
+        <div class="value" id="licenseKey">-</div>
+      </div>
+    </div>
+    <div class="license-qr-display" id="licenseQrDisplay"></div>
+  </div>
+  <div class="license-footer">
+    This license key is confidential and proprietary. Do not share or distribute.
+  </div>
+</div>
+
+</body>
+</html>
