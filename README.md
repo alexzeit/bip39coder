@@ -17,7 +17,13 @@ A secure, offline-capable HTML tool for working with BIP39 mnemonic seed phrases
 
 ## Quick Start
 
-### Download and Run
+### Option 1: Direct Web Access
+
+🌐 **[Open BIP39 Coder directly in your browser](https://htmlpreview.github.io/?https://github.com/alexzeit/bip39coder/blob/main/bip39coder.html)**
+
+⚠️ **For maximum security**: Use Option 2 (download and run offline) instead of running from the web.
+
+### Option 2: Download and Run Offline (Recommended)
 
 1. Download all files to your computer:
    - `bip39coder.html`
