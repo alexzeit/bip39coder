@@ -355,6 +355,49 @@ If you encounter any issues or have questions, please open an issue on GitHub.
 
 **Remember**: Your mnemonic seed phrase controls access to your funds. Treat it like a password to your bank account - maybe even more carefully! The Linux License disguise is a privacy feature, but the real security comes from keeping your passphrase secret.
 
+## Python CLI Version
+
+For advanced users who prefer command-line tools, a Python CLI version (`bip39coder.py`) is also included in this repository.
+
+### Installation
+
+```bash
+pip install base58
+```
+
+### Usage
+
+**Interactive Mode** - Enter 24 words with live suggestions:
+```bash
+python bip39coder.py
+```
+
+**Dice Mode** - Generate from physical dice rolls (98+ rolls):
+```bash
+python bip39coder.py 123456123456123456123456123456123456123456123456123456123456123456123456123456123456123456123456123456
+```
+
+**Decode Mode** - Decrypt a Base58 string:
+```bash
+python bip39coder.py 11111AWJqK8ZcHvPmVLkVzVp3CzGH5RmPHwUvXoSSWdUQe
+```
+
+### Requirements
+
+- Python 3.6+
+- `base58` library
+
+### Features
+
+The Python CLI version offers:
+- Terminal-based interactive word entry with live autocomplete
+- Keyboard shortcuts (number keys 1-9 to select suggestions)
+- Same encryption/decryption algorithms as the web version
+- Cross-platform support (Windows, macOS, Linux)
+- Smaller footprint for command-line workflows
+
+**Note**: The web version (HTML) is recommended for most users as it works completely offline without any installation or dependencies.
+
 ## Acknowledgments
 
 - BIP39 standard by Bitcoin community
